@@ -87,7 +87,7 @@ def create_task():
 ```
 
 
-A rotina **crate_task**, associada ao endpoint **/task** através de uma requisição **POST**, pega os dados do objeto *json* anexado na requisição e cria uma nova entrada no repositório de tarefas, identificando o título, o estado da tarefa e atribuindo ao ID o valor retornado pela função *get_new_ID()*. Note que os valores *default* ```"No title"``` e ```False``` serão utilizados caso não existam respectivamente as propriedades **title** e **done** no objeto enviado. A função então retorna o Código de Status de Resposta HTTP 201 indicando que a requisição foi bem sucedida e um novo recurso foi criado como resultado.
+A rotina **create_task()**, associada ao endpoint **/task** através de uma requisição **POST**, pega os dados do objeto *json* anexado na requisição e cria uma nova entrada no repositório de tarefas, identificando o título, o estado da tarefa e atribuindo ao ID o valor retornado pela função *get_new_ID()*. Note que os valores *default* ```"No title"``` e ```False``` serão utilizados caso não existam respectivamente as propriedades **title** e **done** no objeto enviado. A função então retorna o [Código de Status de Resposta HTTP](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status) 201 indicando que a requisição foi bem sucedida e um novo recurso foi criado como resultado.
 
 Para testar, utilizamos a ferramenta **CURL** no terminal:
 ```shell
@@ -108,10 +108,8 @@ obtendo como resposta:
 
 Testamos ainda os valores padrão mandando mais requisições sem as propriedades *title* e *done* definidas:
 
-
 ```shell
 curl -X POST -H "Content-Type: application/json" -d "{\"done\":\"True\"}" http://127.0.0.1:5000/task
-
 {
   "message": "Tarefa criada com sucesso!",
   "task": {
@@ -129,6 +127,65 @@ curl -X POST -H "Content-Type: application/json" -d "{}" http://127.0.0.1:5000/t
     "id": 3,
     "title": "No title"
   }
+}
+```
+
+Vamos criar as pesquisas de tarefas, criando as funções **list_task()** e **list_all_tasks()**, retornando os dados de uma tarefa específica e os dados de todas as tarefas respectivamente. Para retornar uam única tafera, será necessário identificá-la através do ID.
+
+```python
+# retorna todas as tarefas
+@app.route("/task", methods=["GET"])
+def get_task():
+    return jsonify({"total": len(tasks), "tasks": tasks}), 200
+
+
+# retorna tarefa especifica
+@app.route("/task/<int:task_id>", methods=["GET"])
+def get_tasks(task_id):
+    # busca tarefa pelo ID
+    task = [t for t in tasks if t["id"] == task_id]
+    if task:
+        return jsonify(task)
+    return jsonify({"message": "Tarefa não existe"}), 404
+```
+
+PAra testar os retorno, no terminal:
+
+```shell
+curl -H "Content-Type: application/json" http://127.0.0.1:5000/task
+{
+  "tasks": [
+    {
+      "done": "False",
+      "id": 1,
+      "title": "build payments list"
+    },
+    {
+      "done": "True",
+      "id": 2,
+      "title": "No title"
+    },
+    {
+      "done": "False",
+      "id": 3,
+      "title": "No title"
+    }
+  ],
+  "total": 3
+}
+
+curl -H "Content-Type: application/json" http://127.0.0.1:5000/task/2
+[
+  {
+    "done": "True",
+    "id": 2,
+    "title": "No title"
+  }
+]
+
+curl -H "Content-Type: application/json" http://127.0.0.1:5000/task/6
+{
+  "message": "Tarefa n\u00e3o existe"
 }
 ```
 
