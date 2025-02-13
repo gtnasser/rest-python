@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Formulário de Teste</title>
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            margin: 20px
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="row">
+            <div class="col-md-6">
+                <h3 class="my-4">Requisição HTTP</h3>
+                <form id="form" class="mb-4">
+                    <div class="form-group">
+                        <label for="txtTaskId">Task ID</label>
+                        <input type="text" class="form-control" id="txtTaskId" placeholder="Digite Task ID">
+                    </div>
+                    <div class="form-group">
+                        <label for="txtTaskTitle">Title</label>
+                        <input type="text" class="form-control" id="txtTaskTitle" placeholder="Digite Title ">
+                    </div>
+
+					<div class="form-check mb-3">
+							<input type="checkbox" class="form-check-input" id="chkTaskDone">
+							<label class="form-check-label" for="chkTaskDone">Done</label>
+					</div>
+
+					<div class="form-check mb-3">
+                        <button type="button" class="btn btn-success" onclick="createTask()">New Task</button>
+                        <button type="button" class="btn btn-info" onclick="getTaskById()">Get by ID</button>
+                        <button type="button" class="btn btn-info" onclick="getAllTasks()">Get All</button>
+                        <button type="button" class="btn btn-primary" onclick="UpdateTask()">Update</button>
+                        <button type="button" class="btn btn-danger" onclick="DeleteTask()">Delete</button>
+                        <button type="button" class="btn btn-link" disabled title="spinner">
+                            <div id="spinner" class="spinner-border text-primary" role="status" style="visibility: hidden;">
+                                <span class="sr-only">loading...</span>
+                            </div>
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="col-md-6">
+                <h2 class="my-4">Retorno</h2>
+                <div class="form-group row">
+                    <label for="statusCode" class="col-sm-3 col-form-label">HTTP Status:</label>
+                    <div class="col-sm-9">
+                        <input type="text" class="form-control" id="statusCode" placeholder="" disabled>
+                    </div>
+                </div>
+                <textarea id="response" class="form-control" rows="10" readonly></textarea>
+            </div>
+        </div>
+    </div>
+
+    <script>
+
+        var TASK_URL = 'http://127.0.0.1:5000/task'
+
+        function createTask() {
+            document.getElementById('statusCode').value = ''
+            document.getElementById('response').value = ''
+
+            const data = {
+                title: document.getElementById('txtTaskTitle').value,
+                done: document.getElementById('chkTaskDone')?.checked,
+            }
+            showSpinner(true)
+            fetch(TASK_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                document.getElementById('statusCode').value = `${response.status} ${response.statusText}`
+                return response.json()
+            })
+            .then(data => {
+                document.getElementById('response').value = JSON.stringify(data, null, 4)
+            })
+            .catch(error => {
+                document.getElementById('response').value = 'Error: ' + error
+            })
+            .finally( () => {
+                showSpinner(false)
+            })
+        }
+
+        function getTaskById() {
+            showSpinner(true)
+            id = document.getElementById('txtTaskId').value
+            url = encodeURI(TASK_URL + '/' + id)
+            fetch(url, {
+                method: 'GET'
+            })
+            .then(response => {
+                console.log(response)
+                document.getElementById('statusCode').value = `${response.status} ${response.statusText}`
+                return response.json()
+            })
+            .then(data => {
+                document.getElementById('response').value = JSON.stringify(data, null, 4)
+            })
+            .catch(error => {
+                document.getElementById('response').value = 'Error: ' + error
+            })
+            .finally( () => {
+                showSpinner(false)
+            })
+        }
+
+        function getAllTasks() {
+            showSpinner(true)
+            fetch(TASK_URL, {
+                method: 'GET'
+            })
+            .then(response => {
+                console.log(response)
+                document.getElementById('statusCode').value = `${response.status} ${response.statusText}`
+                return response.json()
+            })
+            .then(data => {
+                document.getElementById('response').value = JSON.stringify(data, null, 4)
+            })
+            .catch(error => {
+                document.getElementById('response').value = 'Error: ' + error
+            })
+            .finally( () => {
+                showSpinner(false)
+            })
+        }
+
+        function UpdateTask() {
+            showSpinner(true)
+            const data = {
+                id: document.getElementById('txtTaskId').value,
+                title: document.getElementById('txtTaskTitle').value,
+                done: document.getElementById('chkTaskDone')?.checked,
+            }
+            showSpinner(true)
+            id = document.getElementById('txtTaskId').value || -1
+            url = encodeURI(TASK_URL + '/' + id)
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                console.log(response)
+                document.getElementById('statusCode').value = `${response.status} ${response.statusText}`
+                return response.json()
+            })
+            .then(data => {
+                document.getElementById('response').value = JSON.stringify(data, null, 4)
+            })
+            .catch(error => {
+                document.getElementById('response').value = 'Error: ' + error
+            })
+            .finally( () => {
+                showSpinner(false)
+            })
+        }
+
+        function DeleteTask() {
+            showSpinner(true)
+            const data = {
+                id: document.getElementById('txtTaskId').value,
+            }
+
+            fetch(TASK_URL, {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(data)
+            })
+            .then(response => {
+                console.log(response)
+                document.getElementById('statusCode').value = `${response.status} ${response.statusText}`
+                return response.json()
+            })
+            .then(data => {
+                document.getElementById('response').value = JSON.stringify(data, null, 4)
+            })
+            .catch(error => {
+                document.getElementById('response').value = 'Error: ' + error
+            })
+            .finally( () => {
+                showSpinner(false)
+            })
+        }
+
+        function showSpinner(show) {
+            if (show) {
+                document.getElementById('spinner').style.visibility = 'visible'
+            } else {
+                document.getElementById('spinner').style.visibility = 'hidden'
+            }
+        }
+
+        function isJson(jsonString){
+            try {
+                var o = JSON.parse(jsonString)
+                if (o && typeof o === "object" && o !== null) return o
+            }
+            catch (e) { }
+            return false;
+        }
+
+        //obs:
+        //txtTaskId.addEventListener("click", function() {
+        //    alert('oi')
+        //    document.body.classList.add("light")
+        //})
+
+    </script>
+    <!--
+	<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+	-->
+</body>
+</html>

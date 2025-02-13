@@ -1,8 +1,10 @@
 # rest-python - Exemplo de API REST em Python
 
-    OBS: Vou usar o VSCode em Windows, se voce está usando outro sistema operacional ou outro editor de texto, os comandos podem ser ligeiramente diferentes.
+O que é REST? Um pouco de Teoria [aqui](rest.md)
 
-Assumindo que o Python já está instalado, vamso criar o projeto e iniciar instalando a biblioteca Flask.
+Para este projeto, vou usar o [VSCode](https://code.visualstudio.com/) em Windows. Se voce está usando outro sistema operacional ou outro editor de texto, os comandos podem ser ligeiramente diferentes.
+
+Assumindo que o [Python](https://www.python.org/) já está instalado, vamos criar o projeto e iniciar instalando a biblioteca [Flask](https://flask.palletsprojects.com/en/stable/).
 
 No terminal:
 
@@ -50,18 +52,17 @@ A API que vamos criar será para manipular uma lista simples de tarefas, e dispo
 
 Método HTTP|API endpoint|Funcionalidade
 ---|---|---
+POST|/task|Cria uma nova tarefa.
 GET|/task|Obtém a lista de tarefas
 GET|/task/<task_id>|Obtém uma tarefa específica.
-POST|/task|Cria uma nova tarefa.
 DELETE|/task/<task_id>|Exclui uma tarefa específica.
+
+
+## 3. Cria uma nova tarefa.
 
 Vamos iniciar criando um contador para numerar as novas tarefas, será o ID da tarefa e será usado para operações específicas nesta tarefa, por exemplo, excluí-la. Ele será acessado através da função *get_new_ID()*.
 
 E vamos utilizar o objeto *request* do Flask para recuperar os dados enviados no corpo da requisição, e o objeto *jsonify* para formatar a resposta como um *json*.
-
-```shell
-pip install
-```
 
 incluir em *server.py*:
 
@@ -71,23 +72,22 @@ from flask import request, jsonify
 tasks = []  # Lista para armazenar as tarefas
 task_id_control = 1  # Controlador de IDs para garantir unicidade
 
-@app.route("/tasks", methods=["POST"])
+@app.route("/task", methods=["POST"])
 def create_task():
-    global task_id_control
-    data = request.get_json()  # Pega os dados enviados no corpo da requisição
+    # pega dados da requisicao
+    data = request.get_json()
+    # cria nova tarefa incompleta
     new_task = {
-        "id": task_id_control,
-        "title": data.get("title"),  # Obtém o título enviado
-        "description": data.get("description", ""),  # Descrição opcional
-        "completed": False  # Define que a tarefa começa como incompleta
+        "id": get_new_ID(),
+        "title": data.get("title",""),
+        "done": data.get("done","False")=="True"
     }
     tasks.append(new_task)  # Adiciona a nova tarefa à lista
-    task_id_control += 1  # Incrementa o ID para a próxima tarefa
     return jsonify({"message": "Tarefa criada com sucesso!", "task": new_task}), 201
+
 ```
 
-
-A rotina **create_task()**, associada ao endpoint **/task** através de uma requisição **POST**, pega os dados do objeto *json* anexado na requisição e cria uma nova entrada no repositório de tarefas, identificando o título, o estado da tarefa e atribuindo ao ID o valor retornado pela função *get_new_ID()*. Note que os valores *default* ```"No title"``` e ```False``` serão utilizados caso não existam respectivamente as propriedades **title** e **done** no objeto enviado. A função então retorna o [Código de Status de Resposta HTTP](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status) 201 indicando que a requisição foi bem sucedida e um novo recurso foi criado como resultado.
+A rotina **create_task()**, associada ao endpoint **/task** através de uma requisição **POST**, pega os dados do objeto *json* anexado na requisição e cria uma nova entrada no repositório de tarefas, identificando o título, o estado da tarefa e atribuindo ao ID o valor retornado pela função *get_new_ID()*. Note que se não existirem na requisição, serão adotados os valores ```""``` e ```False``` respectivamente para as propriedades **title** e **done** no objeto enviado. A função então retorna o [Código de Status de Resposta HTTP](https://developer.mozilla.org/pt-BR/docs/Web/HTTP/Status) 201 indicando que a requisição foi bem sucedida e um novo recurso foi criado como resultado.
 
 Para testar, utilizamos a ferramenta **CURL** no terminal:
 ```shell
@@ -130,6 +130,8 @@ curl -X POST -H "Content-Type: application/json" -d "{}" http://127.0.0.1:5000/t
 }
 ```
 
+## 4. Lista as tarefas ou tarefa específica
+
 Vamos criar as pesquisas de tarefas, criando as funções **list_task()** e **list_all_tasks()**, retornando os dados de uma tarefa específica e os dados de todas as tarefas respectivamente. Para retornar uam única tafera, será necessário identificá-la através do ID.
 
 ```python
@@ -149,7 +151,7 @@ def get_tasks(task_id):
     return jsonify({"message": "Tarefa não existe"}), 404
 ```
 
-PAra testar os retorno, no terminal:
+Para testar os retorno, no terminal:
 
 ```shell
 curl -H "Content-Type: application/json" http://127.0.0.1:5000/task
@@ -188,4 +190,22 @@ curl -H "Content-Type: application/json" http://127.0.0.1:5000/task/6
   "message": "Tarefa n\u00e3o existe"
 }
 ```
+
+## 5. Client HTML
+
+Vamos criar uma [página em HTML](client.html) para facilitar os testes da API. É uma página simples, pode ser executada diretamente no browser.
+
+Mas para não dar erro de CORS, vamos adicionar no *server.py* o uso da biblioteca *flask_cors*, e acrescentar o decorador ```@cross_origin()``` em cada endpoint.
+```python
+from flask_cors import CORS, cross_origin
+cors = CORS(app) # allow CORS for all domains on all routes.
+app.config['CORS_HEADERS'] = 'Content-Type'
+
+# retorna todas as tarefas
+@app.route("/task", methods=["GET"])
+@cross_origin()
+def get_task():
+    return jsonify({"total": len(tasks), "tasks": tasks}), 200
+```
+
 
